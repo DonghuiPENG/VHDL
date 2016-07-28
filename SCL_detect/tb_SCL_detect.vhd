@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! @file
---! @brief tb_SCL_detect :testbench for detect those states from I2C clock line
+--! @brief tb_SCL_detect :testbench for the entity SCL_detect
 -------------------------------------------------------
  
 --! Use standard library
@@ -33,7 +33,7 @@ component SCL_detect is
 		SCL_start_point 		: out  STD_LOGIC;
 		SCL_falling_point 		: out  STD_LOGIC;
 		SCL_write_point 		: out  STD_LOGIC;
-		SCL_error_point 		: out  STD_LOGIC
+		SCL_error_indication 	: out  STD_LOGIC
 		);
 			  
 end component;
@@ -51,7 +51,7 @@ end component;
 	signal SCL_start_point 			: STD_LOGIC;
 	signal SCL_falling_point 		: STD_LOGIC;
 	signal SCL_write_point 			: STD_LOGIC;
-	signal SCL_error_point 			: STD_LOGIC;
+	signal SCL_error_indication 	: STD_LOGIC;
 
 	
 begin
@@ -71,7 +71,7 @@ begin
 			SCL_falling_point => SCL_falling_point,
 			SCL_sample_point => SCL_sample_point,
 			SCL_write_point => SCL_write_point,
-			SCL_error_point => SCL_error_point
+			SCL_error_indication => SCL_error_indication
 			);
 	
 				

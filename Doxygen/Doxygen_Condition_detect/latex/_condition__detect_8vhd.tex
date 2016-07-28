@@ -1,0 +1,19 @@
+\hypertarget{_condition__detect_8vhd}{}\section{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+Condition\+\_\+detect/\+Condition\+\_\+detect.vhd File Reference}
+\label{_condition__detect_8vhd}\index{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+Condition\+\_\+detect/\+Condition\+\_\+detect.\+vhd@{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+Condition\+\_\+detect/\+Condition\+\_\+detect.\+vhd}}
+
+
+\hyperlink{class_condition__detect}{Condition\+\_\+detect} \+: This entity with synchronization reset is used to detect the condition of action from master by line S\+CL and S\+DA. According to the protocol of I2C, we need to use these two lines inputs. First, we need to judge the S\+DA data on every S\+CL high level. There are also three outputs to indicate these conditions. Stop condition means S\+DA from zero to one, start condition means S\+DA from one to zero. Start condition could be acted after the stop condition on the same S\+CL high level, that means restart condition. It\textquotesingle{}s same as a stop with a start. But, it can\textquotesingle{}t act the stop condition after the start condition , that makes no sense. And the state will transfer to init state. If it\textquotesingle{}s on S\+CL low level, it would also transfer to init state and waiting for the next judgement.  
+
+
+\subsection*{Entities}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_condition__detect}{Condition\+\_\+detect} entity
+\begin{DoxyCompactList}\small\item\em Use logic elements \hyperlink{class_condition__detect}{Condition\+\_\+detect} entity brief description Detailed description of this \hyperlink{class_condition__detect}{Condition\+\_\+detect} design element. \end{DoxyCompactList}\item 
+\hyperlink{class_condition__detect_1_1fsm}{fsm} architecture
+\begin{DoxyCompactList}\small\item\em Architecture definition of the \hyperlink{class_condition__detect}{Condition\+\_\+detect}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\hyperlink{class_condition__detect}{Condition\+\_\+detect} \+: This entity with synchronization reset is used to detect the condition of action from master by line S\+CL and S\+DA. According to the protocol of I2C, we need to use these two lines inputs. First, we need to judge the S\+DA data on every S\+CL high level. There are also three outputs to indicate these conditions. Stop condition means S\+DA from zero to one, start condition means S\+DA from one to zero. Start condition could be acted after the stop condition on the same S\+CL high level, that means restart condition. It\textquotesingle{}s same as a stop with a start. But, it can\textquotesingle{}t act the stop condition after the start condition , that makes no sense. And the state will transfer to init state. If it\textquotesingle{}s on S\+CL low level, it would also transfer to init state and waiting for the next judgement. 
+

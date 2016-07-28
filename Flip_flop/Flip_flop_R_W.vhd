@@ -1,7 +1,12 @@
 -------------------------------------------------------
 --! @file
---! @brief Flip_flop_R_W :flip_flop for a port can be used to
---! read by microcontrolleur and write by I2C
+--! @brief Flip_flop_R_W :
+--! This entity with synchronization reset is uesd to perform a special port. 
+--!	It could be read by microcontroller and writen by I2C. That means if I2C set
+--! 'i2c_write' on one, it would put the data of 'i2c_data_in' into the output 'uc_read'.
+--! It could be one or zero.It just likes its write fonction.
+--!	Then we can use its output as the input of microcontroller. 
+--! It likes read by microcontroller.
 -------------------------------------------------------
 
 --! Use standard library
@@ -46,7 +51,7 @@ begin
 				uc_read <= i2c_data_in;
 				end if;
 			else
-			uc_read <= '0';		
+			uc_read <= '0';	--!if sync_rst equals to '0', that means reset, then output equals to '0'	
 			end if;	
 		end if;
 	end if;

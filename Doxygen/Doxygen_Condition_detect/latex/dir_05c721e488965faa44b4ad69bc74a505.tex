@@ -1,0 +1,9 @@
+\hypertarget{dir_05c721e488965faa44b4ad69bc74a505}{}\section{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+Condition\+\_\+detect Directory Reference}
+\label{dir_05c721e488965faa44b4ad69bc74a505}\index{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+Condition\+\_\+detect Directory Reference@{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+Condition\+\_\+detect Directory Reference}}
+\subsection*{Files}
+\begin{DoxyCompactItemize}
+\item 
+file \hyperlink{_condition__detect_8vhd}{Condition\+\_\+detect.\+vhd}
+\begin{DoxyCompactList}\small\item\em \hyperlink{class_condition__detect}{Condition\+\_\+detect} \+: This entity with synchronization reset is used to detect the condition of action from master by line S\+CL and S\+DA. According to the protocol of I2C, we need to use these two lines inputs. First, we need to judge the S\+DA data on every S\+CL high level. There are also three outputs to indicate these conditions. Stop condition means S\+DA from zero to one, start condition means S\+DA from one to zero. Start condition could be acted after the stop condition on the same S\+CL high level, that means restart condition. It\textquotesingle{}s same as a stop with a start. But, it can\textquotesingle{}t act the stop condition after the start condition , that makes no sense. And the state will transfer to init state. If it\textquotesingle{}s on S\+CL low level, it would also transfer to init state and waiting for the next judgement. \end{DoxyCompactList}\item 
+file \hyperlink{tb___condition__detect_8vhd}{tb\+\_\+\+Condition\+\_\+detect.\+vhd}
+\begin{DoxyCompactList}\small\item\em tb\+\_\+\+Condition\+\_\+detect\+\_\+\+Condition\+\_\+detect \+:testbench for the entity \hyperlink{class_condition__detect}{Condition\+\_\+detect} \end{DoxyCompactList}\end{DoxyCompactItemize}

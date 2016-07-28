@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! @file
---! @brief tb_Condition_detect_Condition_detect :testbench for detect those conditions from master
+--! @brief tb_Condition_detect_Condition_detect :testbench for the entity Condition_detect
 -------------------------------------------------------
  
 --! Use standard library

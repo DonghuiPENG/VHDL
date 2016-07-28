@@ -1,4 +1,5 @@
-Comments on cascadable_counter.vhd
+Comments on cascadable_counter.vhd--have done
 
-* Add general comments at the top of the file to explain the purpose of the entity
-* Wrong sensitivity list. Only clk (ena is synchronous)
+* Add general comments at the top of the file to explain the purpose of the entity--have done
+* Wrong sensitivity list. Only clk (ena is synchronous)--have done
+

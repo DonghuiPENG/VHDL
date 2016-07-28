@@ -1,0 +1,19 @@
+\hypertarget{_s_c_l__detect_8vhd}{}\section{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+S\+C\+L\+\_\+detect/\+S\+C\+L\+\_\+detect.vhd File Reference}
+\label{_s_c_l__detect_8vhd}\index{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+S\+C\+L\+\_\+detect/\+S\+C\+L\+\_\+detect.\+vhd@{C\+:/\+Users/\+Public/\+Documents/\+Github/\+V\+H\+D\+L/\+S\+C\+L\+\_\+detect/\+S\+C\+L\+\_\+detect.\+vhd}}
+
+
+Condition\+\_\+detect \+: This entity with synchronization reset is used to separate the S\+C\+L\+\_\+tick in differents states according to S\+C\+L\+\_\+in. It\textquotesingle{}s just like simulating those point on the period of S\+C\+L\+\_\+in. It\textquotesingle{}s not the real point like its meanings. In fact, there are 10 S\+C\+L\+\_\+tick periods in one S\+C\+L\+\_\+in period. We are defining certains S\+C\+L\+\_\+tick period as certains points of S\+C\+L\+\_\+in period. It\textquotesingle{}s just like naming those S\+C\+L\+\_\+ticks to be used in the future. On S\+C\+L\+\_\+in low level, there are two sequence points like falling and write. On S\+C\+L\+\_\+in high level, there are four sequence points like rising,stop,sample and start. All of these points would hold on its value on one S\+C\+L\+\_\+tick period. If there are more than 5 S\+C\+L\+\_\+tick periods in half S\+C\+L\+\_\+in period, it will stay on the waiting state to wait for the S\+C\+L\+\_\+in level changes. If there are less than 5 S\+C\+L\+\_\+tick periods in half S\+C\+L\+\_\+in period, it will transfer to error state. First, it need to judge the S\+C\+L\+\_\+in level to start its special points. Then, it would transfer its state one by one in each S\+C\+L\+\_\+tick period. It always works until the S\+C\+L\+\_\+in signal disappear. Or it transfer to init state when synchronization reset equals to \textquotesingle{}0\textquotesingle{}.  
+
+
+\subsection*{Entities}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_s_c_l__detect}{S\+C\+L\+\_\+detect} entity
+\begin{DoxyCompactList}\small\item\em Use logic elements \hyperlink{class_s_c_l__detect}{S\+C\+L\+\_\+detect} entity brief description Detailed description of this \hyperlink{class_s_c_l__detect}{S\+C\+L\+\_\+detect} design element. \end{DoxyCompactList}\item 
+\hyperlink{class_s_c_l__detect_1_1fsm}{fsm} architecture
+\begin{DoxyCompactList}\small\item\em Architecture definition of the \hyperlink{class_s_c_l__detect}{S\+C\+L\+\_\+detect}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Condition\+\_\+detect \+: This entity with synchronization reset is used to separate the S\+C\+L\+\_\+tick in differents states according to S\+C\+L\+\_\+in. It\textquotesingle{}s just like simulating those point on the period of S\+C\+L\+\_\+in. It\textquotesingle{}s not the real point like its meanings. In fact, there are 10 S\+C\+L\+\_\+tick periods in one S\+C\+L\+\_\+in period. We are defining certains S\+C\+L\+\_\+tick period as certains points of S\+C\+L\+\_\+in period. It\textquotesingle{}s just like naming those S\+C\+L\+\_\+ticks to be used in the future. On S\+C\+L\+\_\+in low level, there are two sequence points like falling and write. On S\+C\+L\+\_\+in high level, there are four sequence points like rising,stop,sample and start. All of these points would hold on its value on one S\+C\+L\+\_\+tick period. If there are more than 5 S\+C\+L\+\_\+tick periods in half S\+C\+L\+\_\+in period, it will stay on the waiting state to wait for the S\+C\+L\+\_\+in level changes. If there are less than 5 S\+C\+L\+\_\+tick periods in half S\+C\+L\+\_\+in period, it will transfer to error state. First, it need to judge the S\+C\+L\+\_\+in level to start its special points. Then, it would transfer its state one by one in each S\+C\+L\+\_\+tick period. It always works until the S\+C\+L\+\_\+in signal disappear. Or it transfer to init state when synchronization reset equals to \textquotesingle{}0\textquotesingle{}. 
+

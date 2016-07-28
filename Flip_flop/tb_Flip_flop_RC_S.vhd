@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! @file
---! @brief tb_Condition_detect_Condition_detect :testbench for this flip_flop_rc_s
+--! @brief tb_Flip_flop_RC_S :testbench for the entity flip_flop_rc_s
 -------------------------------------------------------
  
 --! Use standard library
