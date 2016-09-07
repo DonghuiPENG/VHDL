@@ -1,7 +1,18 @@
 -----------------------------------------------------------------
---! @file I2c_slave_engine.vhd
---! @brief 
---! @details 
+--! @file 
+--! @brief I2c_slave_engine : 
+--! @details This entity with synchronization reset is used to simulate the whole slave engine 
+--! design with register. By the way, those ports is simulated for the part of register insteading 
+--! of Avalon interface. According to the I2C slave engine, we need to use some components what it needs
+--! to work well.
+--! First, we need to judge the SDA data on every SCL high level. There are 
+--! also three outputs to indicate these conditions. Stop condition means SDA 
+--! from zero to one, start condition means SDA from one to zero. Start condition
+--! could be acted after the stop condition on the same SCL high level, that 
+--! means restart condition. It's same as a stop with a start. But, it can't act
+--! the stop condition after the start condition , that makes no sense. And the  
+--! state will transfer to init state. If it's on SCL low level, it would also 
+--! transfer to init state and waiting for the next judgement.
 --! PENG Donghui
 -----------------------------------------------------------------
 
@@ -20,9 +31,12 @@ port(
 		clk: in std_logic;				
 		clk_ena: in std_logic;			
 		sync_rst: in std_logic;		
+		SCL_in	: in STD_LOGIC;
+		SDA_in	: in STD_LOGIC;
+		sda_out	: in STD_LOGIC;
+		
 		ctl_role_r: in std_logic;
-		--ctl_ack_r: in std_logic;
-		--ctl_rw_r: in std_logic;
+		ctl_ack_r: in std_logic;
 		ctl_reset_r: in std_logic;
 		
 		status_busy_r: in std_logic;
@@ -39,12 +53,12 @@ port(
 		status_rw_w: out std_logic;
 		status_stop_detected_s: out std_logic;
 		status_start_detected_s: out std_logic;
-		--status_restart_detected_s: out std_logic;
+		status_error_detected_s: out std_logic;
 		status_rxfull_s: out std_logic;
 		status_txempty_s: out std_logic;
-		status_ackrec_s: out std_logic
+		status_ackrec_s: out std_logic;
 		
-		rxdata: out std_logic_vector (7 downto 0);
+		rxdata: out std_logic_vector (7 downto 0)
 		
 	  );
 
@@ -53,11 +67,43 @@ end entity I2c_slave_engine;
 
 
 --! Moore & Mealy Combined Machine
-architecture fsm of shift_register_receiver is
+architecture fsm of I2c_slave_engine is
+
+	
+	signal SCL_in					: STD_LOGIC;
+	signal SCL_tick					: STD_LOGIC; 
+	signal SDA_in					: STD_LOGIC;
+	signal sda_out					: STD_LOGIC;
+	signal sda_out_t1					: STD_LOGIC;
+	signal sda_out_r1					: STD_LOGIC;
+	signal sda_out_r2					: STD_LOGIC;
+	
+	signal SCL_rising_point 		: STD_LOGIC;
+	signal SCL_stop_point			: STD_LOGIC;
+	signal SCL_sample_point 		: STD_LOGIC;
+	signal SCL_start_point 			: STD_LOGIC;
+	signal SCL_falling_point 		: STD_LOGIC;
+	signal SCL_write_point 			: STD_LOGIC;
+	signal SCL_error_indication 	: STD_LOGIC;
+	
+	signal ACK_out					: STD_LOGIC;
+	signal ACK_valued			   	: STD_LOGIC;
+	signal TX_captured				: STD_LOGIC;
+	
+	signal data_received1			: STD_LOGIC;
+	signal data_received2			: STD_LOGIC;
+	signal RX				: std_logic_vector (7 downto 0);	
+	signal TX				: std_logic_vector (7 downto 0);
+	signal start_detected_point		: STD_LOGIC;
+	signal stop_detected_point		: STD_LOGIC;
+	signal error_detected_point		: STD_LOGIC;
+						
+	signal address_received: std_logic_vector (6 downto 0);	
+	signal rw_received: STD_LOGIC;
 
 type state_type is (INIT, start, receiver1, receiver2, transmitter1, stop, error );
 signal state: state_type := INIT;
-signal address_received: std_logic_vector (6 downto 0);	
+
 	
 	--! Component Shift register transmitter
 	component shift_register_transmitter is
@@ -137,51 +183,65 @@ begin
 	
 	
 			
-	transmitter: shift_register_transmitter
-	port map(clk => clk_50MHz,
+	t1: shift_register_transmitter
+	port map(clk => clk,
 		  clk_ena => clk_ena,
-		  sync_rst => rst_variable,
+		  sync_rst => sync_rst,
 		  TX => TX,		-- To connect with TX register
-		  rising_point => rising_point,
-		  sampling_point => sampling_point,
-		  falling_point => falling_point,
-		  writing_point => writing_point,
+		  rising_point => SCL_rising_point,
+		  sampling_point => SCL_sample_point,
+		  falling_point => SCL_falling_point,
+		  writing_point => SCL_write_point,
 		  scl_tick => scl_tick,
-		  sda_out => sda_out_1,
+		  sda_out => sda_out_t1,
 		  sda_in => sda_in,
 		  ACK_out => ACK_out,
 		  ACK_valued => ACK_valued,
 		  TX_captured => TX_captured);
 	
 	
-	 receiver: shift_register_receiver
-	 port map(clk => clk_50MHz,
+	 r1: shift_register_receiver
+	 port map(clk => clk,
 	 clk_ena => clk_ena,
-	 sync_rst => rst_variable,
+	 sync_rst => sync_rst,
 	 scl_tick => scl_tick,
 	 sda_in => sda_in,
-	 falling_point => falling_point,
-	 sampling_point => sampling_point,
-	 writing_point => writing_point,
-	 ACK_in => ACK_in,
-	 sda_out => sda_out_2, 				--sda_out,
-	 data_received => data_received,
+	 falling_point => SCL_falling_point,
+	 sampling_point => SCL_sample_point,
+	 writing_point => SCL_write_point,
+	 ACK_in => ctl_ack_r,
+	 sda_out => sda_out_r1, 				--sda_out,
+	 data_received => data_received1,
 	 RX => RX);
 	 
 	 
-	 Condition_detect: Condition_detect
-	 port map(clk => clk_50MHz,
+	 r2: shift_register_receiver
+	 port map(clk => clk,
 	 clk_ena => clk_ena,
-	 sync_rst => rst_variable,
+	 sync_rst => sync_rst,
+	 scl_tick => scl_tick,
+	 sda_in => sda_in,
+	 falling_point => SCL_falling_point,
+	 sampling_point => SCL_sample_point,
+	 writing_point => SCL_write_point,
+	 ACK_in => ctl_ack_r,
+	 sda_out => sda_out_r2, 				--sda_out,
+	 data_received => data_received2,
+	 RX => RX);
+	 
+	 Cd: Condition_detect
+	 port map(clk => clk,
+	 clk_ena => clk_ena,
+	 sync_rst => sync_rst,
 	 SCL_in => SCL_in,
 	 SDA_in => SDA_in,
 	 start_detected_point => start_detected_point,
 	 stop_detected_point => stop_detected_point,
-	 error_detected_point => error_detected_point,
+	 error_detected_point => error_detected_point
 	 );
 	 
 	 
-	SCL_detect: SCL_detect
+	Sd: SCL_detect
 	port map(  
 			sync_rst => sync_rst,
 			clk => clk, 
@@ -228,12 +288,12 @@ if(rising_edge(clk)) then
 						end if;
 							
 					when receiver1 =>
-						if ( (data_received <= '1') and (address = address_received) )then 
-							if (status_rw_w = '0') then 
+						if ( (data_received1 <= '1') and (address = address_received) )then 
+							if (rw_received = '0') then 
 								state <= receiver2;
 							end if;
 							
-							if (status_rw_w = '1') then 
+							if (rw_received = '1') then 
 								state <= transmitter1;
 							end if;
 						
@@ -274,6 +334,11 @@ if(rising_edge(clk)) then
 							state <= error;
 						end if;
 					
+					when error => 
+						if(sync_rst = '0') then 
+							state <= init;
+						end if;
+					
 					end case;
 				end if;
 			
@@ -296,7 +361,7 @@ begin
 		status_rw_w <= '1';
 		status_stop_detected_s <= '0';
 		status_start_detected_s <= '0';
-		--status_restart_detected_s: out std_logic;
+		status_error_detected_s <= '0';
 		status_rxfull_s <= '0';
 		status_txempty_s <= '0';
 		status_ackrec_s <= '0';
@@ -306,21 +371,22 @@ begin
 case state is
 		
 		when INIT => 
-			null;	
+			status_busy_w <= '0';	
 		
 		when start => 
 			status_start_detected_s <= '1';	
 			
 		when receiver1 => 
-			if(data_received = '1') then
+			if(data_received1 = '1') then
 				status_rxfull_s <= '1';
 				rxdata <= RX ;	
+				rw_received <= RX(0);
 				status_rw_w <= RX(0);
 				address_received <= RX(7 downto 1);
 			end if;		
 		
 		when receiver2 => 
-			if(data_received = '1') then
+			if(data_received2 = '1') then
 				status_rxfull_s <= '1';
 			end if;
 			
@@ -338,11 +404,16 @@ case state is
 			status_stop_detected_s <= '1';
 				
 		when error =>
-				
+			status_error_detected_s <= '1';	
 					
 		end case;
 	
 	end process stateaction;
+	
+	
+	
+sda_out <= sda_out_r1 and sda_out_r2 and sda_out_t1;
+	
 	
 end architecture fsm;
 
