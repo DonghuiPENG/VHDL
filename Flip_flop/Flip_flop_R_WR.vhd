@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! @file
---! @brief Flip_flop_R_W :
+--! @brief Flip_flop_R_WR :
 --! This entity with synchronization reset is uesd to perform a special port. 
 --!	It could be read by microcontroller and writen by I2C. That means if I2C set
 --! 'i2c_write' on one, it would put the data of 'i2c_data_in' into the output 'uc_read'.
@@ -16,10 +16,10 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 ------------------------------------------------------------
 
---! Flip_flop_R_W entity brief description
+--! Flip_flop_R_WR entity brief description
 --! Detailed description of this 
---! Flip_flop_R_W design element.
-entity Flip_flop_R_W is
+--! Flip_flop_R_WR design element.
+entity Flip_flop_R_WR is
 
 Port( 
 	clk 				: in  STD_LOGIC;
@@ -28,14 +28,14 @@ Port(
 	i2c_write 			: in  STD_LOGIC;
 	i2c_data_in 		: in  STD_LOGIC;
 			  
-	uc_read 			: out  STD_LOGIC
+	data_out 			: out  STD_LOGIC
 	);
           
-end Flip_flop_R_W;
+end Flip_flop_R_WR;
 
---! @brief Architecture definition of the Flip_flop_R_W
---! @details More details about this Flip_flop_R_W element.
-architecture Behavioral of Flip_flop_R_W is
+--! @brief Architecture definition of the Flip_flop_R_WR
+--! @details More details about this Flip_flop_R_WR element.
+architecture Behavioral of Flip_flop_R_WR is
 
 begin
 
@@ -48,10 +48,10 @@ begin
 		if (clk_ena = '1') then
 			if (sync_rst = '1') then
 				if( i2c_write = '1') then
-				uc_read <= i2c_data_in;
+				data_out <= i2c_data_in;
 				end if;
 			else
-			uc_read <= '0';	--!if sync_rst equals to '0', that means reset, then output equals to '0'	
+			data_out <= '0';	--!if sync_rst equals to '0', that means reset, then output equals to '0'	
 			end if;	
 		end if;
 	end if;

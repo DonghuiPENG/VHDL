@@ -28,7 +28,7 @@ entity Flip_flop_RC_S is
         uc_clear 		: in  STD_LOGIC;
 		i2c_set 		: in  STD_LOGIC;
 			  
-		uc_read 		: out  STD_LOGIC
+		data_out 		: out  STD_LOGIC
 		);
           
 end Flip_flop_RC_S;
@@ -48,12 +48,12 @@ begin
 		if (clk_ena = '1') then
 			if (sync_rst = '1') then
 				if( uc_clear = '1') then--! if uc_clear act, output equals to '0'
-				uc_read <= '0';
+				data_out <= '0';
 				elsif (i2c_set ='1' )then--! if i2c_set act, output equals to '1'
-				uc_read <= '1';
+				data_out <= '1';
 				end if;		
 			else
-			uc_read <= '0';--!if sync_rst equals to '0', that means reset, then output equals to '0'
+			data_out <= '0';--!if sync_rst equals to '0', that means reset, then output equals to '0'
 			end if;
 		end if;
 	end if;

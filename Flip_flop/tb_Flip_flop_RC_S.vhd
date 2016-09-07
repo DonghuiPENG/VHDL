@@ -24,7 +24,7 @@ component Flip_flop_RC_S is
         uc_clear 		: in  STD_LOGIC;
 		i2c_set 		: in  STD_LOGIC;
 			  
-		uc_read 		: out  STD_LOGIC
+		data_out 		: out  STD_LOGIC
 		);
           
 end component Flip_flop_RC_S;
@@ -36,7 +36,7 @@ end component Flip_flop_RC_S;
 	signal uc_clear		: STD_LOGIC;
 	signal i2c_set		: STD_LOGIC;
 	
-	signal uc_read 		: STD_LOGIC;
+	signal data_out 		: STD_LOGIC;
 	
 	
 begin
@@ -50,7 +50,7 @@ begin
 			uc_clear => uc_clear,
 			i2c_set => i2c_set,
 				
-			uc_read => uc_read
+			data_out => data_out
 			);
 				
 	sync_rst <= '1';
