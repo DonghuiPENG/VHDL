@@ -5,14 +5,7 @@
 --! design with register. By the way, those ports is simulated for the part of register insteading 
 --! of Avalon interface. According to the I2C slave engine, we need to use some components what it needs
 --! to work well.
---! First, we need to judge the SDA data on every SCL high level. There are 
---! also three outputs to indicate these conditions. Stop condition means SDA 
---! from zero to one, start condition means SDA from one to zero. Start condition
---! could be acted after the stop condition on the same SCL high level, that 
---! means restart condition. It's same as a stop with a start. But, it can't act
---! the stop condition after the start condition , that makes no sense. And the  
---! state will transfer to init state. If it's on SCL low level, it would also 
---! transfer to init state and waiting for the next judgement.
+--! 
 --! PENG Donghui
 -----------------------------------------------------------------
 
@@ -33,22 +26,24 @@ port(
 		sync_rst: in std_logic;		
 		SCL_in	: in STD_LOGIC;
 		SDA_in	: in STD_LOGIC;
-		sda_out	: in STD_LOGIC;
+		
 		
 		ctl_role_r: in std_logic;
 		ctl_ack_r: in std_logic;
 		ctl_reset_r: in std_logic;
 		
-		status_busy_r: in std_logic;
-		status_rw_r: in std_logic;
+		--status_busy_r: in std_logic;
+		--status_rw_r: in std_logic;
 		status_rxfull_r: in std_logic;
 		status_txempty_r: in std_logic;		
-		status_ackrec_r: in std_logic;	
+		--status_ackrec_r: in std_logic;	
 		
 		txdata: in std_logic_vector (7 downto 0);
 		
 		address: in std_logic_vector (6 downto 0);
 		
+		sda_out	: out STD_LOGIC;
+
 		status_busy_w: out std_logic;
 		status_rw_w: out std_logic;
 		status_stop_detected_s: out std_logic;
@@ -70,13 +65,12 @@ end entity I2c_slave_engine;
 architecture fsm of I2c_slave_engine is
 
 	
-	signal SCL_in					: STD_LOGIC;
+	
 	signal SCL_tick					: STD_LOGIC; 
-	signal SDA_in					: STD_LOGIC;
-	signal sda_out					: STD_LOGIC;
-	signal sda_out_t1					: STD_LOGIC;
-	signal sda_out_r1					: STD_LOGIC;
-	signal sda_out_r2					: STD_LOGIC;
+	signal sda_out_t1				: STD_LOGIC;
+	signal sda_out_r1				: STD_LOGIC;
+	signal sda_out_r2				: STD_LOGIC;
+	signal scl_out 					: STD_LOGIC;
 	
 	signal SCL_rising_point 		: STD_LOGIC;
 	signal SCL_stop_point			: STD_LOGIC;
@@ -105,6 +99,22 @@ type state_type is (INIT, start, receiver1, receiver2, transmitter1, stop, error
 signal state: state_type := INIT;
 
 	
+	
+	component scl_tick_generator is
+
+	generic( max_count: positive := 8
+			);
+	
+	port(clk_50MHz: in std_logic;	--! clock input
+		sync_rst: in std_logic;		--! '0' active synchronous reset input
+		ena: in std_logic;			--! clock enable input
+		scl_tick: out std_logic		--! scl tick output
+		);
+		
+	end component scl_tick_generator;
+	
+	
+
 	--! Component Shift register transmitter
 	component shift_register_transmitter is
 
@@ -181,8 +191,15 @@ signal state: state_type := INIT;
 	
 begin
 	
+	Stg: scl_tick_generator
+	 port map(clk_50MHz => clk,
+	 sync_rst => sync_rst,
+	 ena => clk_ena,
+	 scl_tick => scl_tick
+	 );
 	
-			
+	
+	
 	t1: shift_register_transmitter
 	port map(clk => clk,
 		  clk_ena => clk_ena,
@@ -233,7 +250,7 @@ begin
 	 port map(clk => clk,
 	 clk_ena => clk_ena,
 	 sync_rst => sync_rst,
-	 SCL_in => SCL_in,
+	 SCL_in => scl_in,
 	 SDA_in => SDA_in,
 	 start_detected_point => start_detected_point,
 	 stop_detected_point => stop_detected_point,
@@ -246,7 +263,7 @@ begin
 			sync_rst => sync_rst,
 			clk => clk, 
 			clk_ena => clk_ena, 
-			SCL_in => SCL_in,
+			SCL_in => scl_in,
 			SCL_tick => SCL_tick,
 				
 			SCL_stop_point => SCL_stop_point,
@@ -288,17 +305,19 @@ if(rising_edge(clk)) then
 						end if;
 							
 					when receiver1 =>
-						if ( (data_received1 <= '1') and (address = address_received) )then 
-							if (rw_received = '0') then 
+						if  (data_received1 <= '1') then
+							if(address = address_received) then 
+								if (rw_received = '0') then 
 								state <= receiver2;
-							end if;
+								end if;
 							
-							if (rw_received = '1') then 
+								if (rw_received = '1') then 
 								state <= transmitter1;
+								end if;
+							else
+								state <= INIT;
 							end if;
 						
-						else 
-							state <= INIT;
 						end if;
 						
 						if ((SCL_error_indication = '1') or (error_detected_point = '1')) then 
