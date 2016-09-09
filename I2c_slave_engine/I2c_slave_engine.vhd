@@ -32,11 +32,10 @@ port(
 		ctl_ack_r: in std_logic;
 		ctl_reset_r: in std_logic;
 		
-		--status_busy_r: in std_logic;
-		--status_rw_r: in std_logic;
+		
 		status_rxfull_r: in std_logic;
 		status_txempty_r: in std_logic;		
-		--status_ackrec_r: in std_logic;	
+		
 		
 		txdata: in std_logic_vector (7 downto 0);
 		
@@ -51,7 +50,7 @@ port(
 		status_error_detected_s: out std_logic;
 		status_rxfull_s: out std_logic;
 		status_txempty_s: out std_logic;
-		status_ackrec_s: out std_logic;
+		status_ackrec_w: out std_logic;
 		
 		rxdata: out std_logic_vector (7 downto 0)
 		
@@ -65,12 +64,14 @@ end entity I2c_slave_engine;
 architecture fsm of I2c_slave_engine is
 
 	
-	
+	signal casc_in 					: STD_LOGIC:= '1';
+	signal count 					:integer;
+	signal casc_out					: STD_LOGIC;
 	signal SCL_tick					: STD_LOGIC; 
 	signal sda_out_t1				: STD_LOGIC;
 	signal sda_out_r1				: STD_LOGIC;
 	signal sda_out_r2				: STD_LOGIC;
-	signal scl_out 					: STD_LOGIC;
+	
 	
 	signal SCL_rising_point 		: STD_LOGIC;
 	signal SCL_stop_point			: STD_LOGIC;
@@ -80,14 +81,17 @@ architecture fsm of I2c_slave_engine is
 	signal SCL_write_point 			: STD_LOGIC;
 	signal SCL_error_indication 	: STD_LOGIC;
 	
+	signal receiver1_switch			: STD_LOGIC:='0';
+	signal receiver2_switch			: STD_LOGIC:='0';
+	signal transmitter1_switch		: STD_LOGIC:='0';
 	signal ACK_out					: STD_LOGIC;
 	signal ACK_valued			   	: STD_LOGIC;
 	signal TX_captured				: STD_LOGIC;
+	signal ACK_sent1					: STD_LOGIC;
+	signal ACK_sent2					: STD_LOGIC;
 	
 	signal data_received1			: STD_LOGIC;
-	signal data_received2			: STD_LOGIC;
-	signal RX				: std_logic_vector (7 downto 0);	
-	signal TX				: std_logic_vector (7 downto 0);
+	signal RX1				: std_logic_vector (7 downto 0);	
 	signal start_detected_point		: STD_LOGIC;
 	signal stop_detected_point		: STD_LOGIC;
 	signal error_detected_point		: STD_LOGIC;
@@ -95,10 +99,22 @@ architecture fsm of I2c_slave_engine is
 	signal address_received: std_logic_vector (6 downto 0);	
 	signal rw_received: STD_LOGIC;
 
-type state_type is (INIT, start, receiver1, receiver2, transmitter1, stop, error );
+type state_type is (INIT, start, receiver1,receiver1_waiting, receiver2, transmitter1, stop, error );
 signal state: state_type := INIT;
 
 	
+	component cascadable_counter is
+
+	generic(max_count: positive := 2);
+	port (clk: in std_logic;
+			ena: in std_logic;
+			sync_rst:in std_logic;
+			casc_in: in std_logic;
+			count: out integer range 0 to (max_count-1);
+			casc_out: out std_logic
+			);
+			
+	end component cascadable_counter;
 	
 	component scl_tick_generator is
 
@@ -148,6 +164,7 @@ signal state: state_type := INIT;
 	 writing_point: in std_logic;
 	 ACK_in: in std_logic;
 	 sda_out: out std_logic;
+	 ACK_sent: out std_logic;		--! ACK_sent output, triger a '1' when ACK is sent
 	 data_received: out std_logic;
 	 RX: out std_logic_vector (7 downto 0));
 	 
@@ -191,10 +208,19 @@ signal state: state_type := INIT;
 	
 begin
 	
+	cc: cascadable_counter
+	 port map(clk => clk,
+	 ena => clk_ena,
+	 sync_rst => sync_rst,
+	 casc_in => casc_in,
+	 count=>count,
+	 casc_out=>casc_out
+	 );
+	
 	Stg: scl_tick_generator
 	 port map(clk_50MHz => clk,
 	 sync_rst => sync_rst,
-	 ena => clk_ena,
+	 ena => casc_out,
 	 scl_tick => scl_tick
 	 );
 	
@@ -203,8 +229,8 @@ begin
 	t1: shift_register_transmitter
 	port map(clk => clk,
 		  clk_ena => clk_ena,
-		  sync_rst => sync_rst,
-		  TX => TX,		-- To connect with TX register
+		  sync_rst => transmitter1_switch,
+		  TX => txdata,		-- To connect with TX register
 		  rising_point => SCL_rising_point,
 		  sampling_point => SCL_sample_point,
 		  falling_point => SCL_falling_point,
@@ -212,15 +238,15 @@ begin
 		  scl_tick => scl_tick,
 		  sda_out => sda_out_t1,
 		  sda_in => sda_in,
-		  ACK_out => ACK_out,
+		  ACK_out => status_ackrec_w,
 		  ACK_valued => ACK_valued,
-		  TX_captured => TX_captured);
+		  TX_captured => status_txempty_s);
 	
 	
 	 r1: shift_register_receiver
 	 port map(clk => clk,
 	 clk_ena => clk_ena,
-	 sync_rst => sync_rst,
+	 sync_rst => receiver1_switch,
 	 scl_tick => scl_tick,
 	 sda_in => sda_in,
 	 falling_point => SCL_falling_point,
@@ -228,14 +254,15 @@ begin
 	 writing_point => SCL_write_point,
 	 ACK_in => ctl_ack_r,
 	 sda_out => sda_out_r1, 				--sda_out,
+	 ACK_sent=> ACK_sent1,
 	 data_received => data_received1,
-	 RX => RX);
+	 RX => RX1);
 	 
 	 
 	 r2: shift_register_receiver
 	 port map(clk => clk,
 	 clk_ena => clk_ena,
-	 sync_rst => sync_rst,
+	 sync_rst => receiver2_switch,
 	 scl_tick => scl_tick,
 	 sda_in => sda_in,
 	 falling_point => SCL_falling_point,
@@ -243,8 +270,9 @@ begin
 	 writing_point => SCL_write_point,
 	 ACK_in => ctl_ack_r,
 	 sda_out => sda_out_r2, 				--sda_out,
-	 data_received => data_received2,
-	 RX => RX);
+	 ACK_sent=> ACK_sent2,
+	 data_received => status_rxfull_s,
+	 RX => rxdata);
 	 
 	 Cd: Condition_detect
 	 port map(clk => clk,
@@ -298,15 +326,29 @@ if(rising_edge(clk)) then
 						end if;
 					
 					when start =>
+						if (SCL_falling_point= '1') then
 						state <= receiver1;
+						end if;
 						
 						if ((SCL_error_indication = '1') or (error_detected_point = '1')) then 
 							state <= error;
 						end if;
 							
 					when receiver1 =>
-						if  (data_received1 <= '1') then
-							if(address = address_received) then 
+						
+						if  (ACK_sent1 = '1') then
+							state <= receiver1_waiting;
+						
+						else 
+							state <= receiver1;
+						end if;
+						
+						if ((SCL_error_indication = '1') or (error_detected_point = '1')) then 
+							state <= error;
+						end if;
+					
+					when receiver1_waiting=>
+						if(address = address_received) then 
 								if (rw_received = '0') then 
 								state <= receiver2;
 								end if;
@@ -314,10 +356,8 @@ if(rising_edge(clk)) then
 								if (rw_received = '1') then 
 								state <= transmitter1;
 								end if;
-							else
+						else
 								state <= INIT;
-							end if;
-						
 						end if;
 						
 						if ((SCL_error_indication = '1') or (error_detected_point = '1')) then 
@@ -375,17 +415,18 @@ end process transitions_and_storage;
 stateaction: process (state) is
 	
 begin
-
+		receiver1_switch <= '0';
+		receiver2_switch <= '0';
+		transmitter1_switch <= '0';
+		
         status_busy_w <= '1';
-		status_rw_w <= '1';
+		status_rw_w <= rw_received;
 		status_stop_detected_s <= '0';
 		status_start_detected_s <= '0';
 		status_error_detected_s <= '0';
-		status_rxfull_s <= '0';
-		status_txempty_s <= '0';
-		status_ackrec_s <= '0';
 		
-		rxdata <= (others => '0');
+		
+		
 			
 case state is
 		
@@ -395,28 +436,23 @@ case state is
 		when start => 
 			status_start_detected_s <= '1';	
 			
-		when receiver1 => 
-			if(data_received1 = '1') then
-				status_rxfull_s <= '1';
-				rxdata <= RX ;	
-				rw_received <= RX(0);
-				status_rw_w <= RX(0);
-				address_received <= RX(7 downto 1);
-			end if;		
+			
+		when receiver1 =>
+			
+			receiver1_switch <= '1';
+			
+		when receiver1_waiting => 
+			receiver1_switch <= '1';	
+			rw_received <= RX1(0);
+			address_received <= RX1(7 downto 1);
+			
 		
 		when receiver2 => 
-			if(data_received2 = '1') then
-				status_rxfull_s <= '1';
-			end if;
+			receiver2_switch <= '1';
+			
 			
 		when transmitter1 => 
-			if (TX_captured = '1') then 
-				status_txempty_s <= '1';
-			end if;
-			
-			if (ACK_valued = '1') then 
-				status_ackrec_s <= ACK_out;
-			end if;
+			transmitter1_switch <= '1';
 
 		when stop =>
 			status_busy_w <= '0';

@@ -26,7 +26,7 @@ port(
 		ctl_reset_r: in std_logic;
 		
 		
-		--status_rw_r: in std_logic;
+		
 		status_rxfull_r: in std_logic;
 		status_txempty_r: in std_logic;		
 		
@@ -44,7 +44,7 @@ port(
 		status_error_detected_s: out std_logic;
 		status_rxfull_s: out std_logic;
 		status_txempty_s: out std_logic;
-		status_ackrec_s: out std_logic;
+		status_ackrec_w: out std_logic;
 		
 		rxdata: out std_logic_vector (7 downto 0)
 		
@@ -52,7 +52,11 @@ port(
 
 
 end component I2c_slave_engine;
-
+	
+	
+	signal sda_master:  std_logic;
+	signal sda:  std_logic;
+	
     signal  clk:  std_logic;				
 	signal	clk_ena:  std_logic:= '1';			
 	signal	sync_rst:  std_logic:= '1';
@@ -81,7 +85,7 @@ end component I2c_slave_engine;
 	signal	status_error_detected_s:  std_logic;
 	signal	status_rxfull_s:  std_logic;
 	signal	status_txempty_s:  std_logic;
-	signal	status_ackrec_s:  std_logic;
+	signal	status_ackrec_w:  std_logic;
 		
 	signal	rxdata:  std_logic_vector (7 downto 0);
 	
@@ -119,12 +123,13 @@ begin
 			status_error_detected_s => status_error_detected_s,
 			status_rxfull_s => status_rxfull_s,
 			status_txempty_s => status_txempty_s,
-			status_ackrec_s => status_ackrec_s,
+			status_ackrec_w => status_ackrec_w,
 			
 			rxdata => rxdata
 			);
 	
-
+SDA <= sda_out and sda_master;
+SDA_in <= sda;
 clk_signal: process is
 	begin 
 	
@@ -145,25 +150,43 @@ SCL_in_signal: process is
 			
 end process SCL_in_signal;
 
-SDA_in_signal: process is
+sda_master_signal: process is
 	begin 
 	
-		SDA_in <= '1';
+		-- sda_master <= '1';
+		-- wait for 320*9 ns;
+		-- sda_master <= '0';
+		-- wait for 320*64 ns;
+		-- sda_master <= '1';
+		-- wait for 320*10 ns;
+		-- sda_master <= '0';
+		-- wait for 320*10 ns;
+		-- sda_master <= '1';
+		-- wait for 320*10 ns;
+		
+		-- sda_master <= '1';
+		-- wait for 320*10*8 ns;
+		-- sda_master <= '1';
+		-- wait for 320*10 ns;
+		-- sda_master <= '0';
+		-- wait for 320*4 ns;
+		-- sda_master <= '1';
+		-- wait for 320*3 ns;
+		
+		sda_master <= '1';
 		wait for 320*9 ns;
-		SDA_in <= '0';
+		sda_master <= '0';
 		wait for 320*64 ns;
-		SDA_in <= '1';
-		wait for 320*10 ns;
-		SDA_in <= '0';
-		wait for 320*20 ns;
-		SDA_in <= '1';
-		wait for 320*80 ns;
-		SDA_in <= '0';
-		wait for 320*17 ns;
-		SDA_in <= '1';
+		sda_master <= '1';
+		wait for 320*10*12 ns;
+		sda_master <= '0';
+		wait for 320*4 ns;
+		sda_master <= '1';
 		wait for 320*3 ns;
-			
-end process SDA_in_signal;
+		
+		
+		
+end process sda_master_signal;
 
 ctl_role_r_signal: process is
 	begin 	
@@ -174,7 +197,7 @@ end process ctl_role_r_signal;
 
 ctl_ack_r_signal: process is
 	begin 	
-		ctl_ack_r <= '1';
+		ctl_ack_r <= '0';
 		wait ;
 			
 end process ctl_ack_r_signal;
