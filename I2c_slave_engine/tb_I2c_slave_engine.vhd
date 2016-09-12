@@ -27,8 +27,8 @@ port(
 		
 		
 		
-		status_rxfull_r: in std_logic;
-		status_txempty_r: in std_logic;		
+		--status_rxfull_r: in std_logic;
+		--status_txempty_r: in std_logic;		
 		
 		
 		txdata: in std_logic_vector (7 downto 0);
@@ -68,9 +68,9 @@ end component I2c_slave_engine;
 	signal	ctl_reset_r:  std_logic;
 		
 	
-	--signal	status_rw_r:  std_logic;
-	signal	status_rxfull_r:  std_logic;
-	signal	status_txempty_r:  std_logic;		
+	
+	--signal	status_rxfull_r:  std_logic;
+	--signal	status_txempty_r:  std_logic;		
 	
 		
 	signal	txdata:  std_logic_vector (7 downto 0);	
@@ -107,9 +107,9 @@ begin
 			ctl_reset_r	=> ctl_reset_r,
 			
 			
-			--status_rw_r => status_rw_r,
-			status_rxfull_r => status_rxfull_r,
-			status_txempty_r => status_txempty_r,
+			
+			--status_rxfull_r => status_rxfull_r,
+			--status_txempty_r => status_txempty_r,
 			
 			
 			txdata => txdata,
@@ -172,19 +172,49 @@ sda_master_signal: process is
 		-- wait for 320*4 ns;
 		-- sda_master <= '1';
 		-- wait for 320*3 ns;
-		
+	--
+		-- sda_master <= '1';
+		-- wait for 320*9 ns;
+		-- sda_master <= '0';
+		-- wait for 320*64 ns;
+		-- sda_master <= '1';
+		-- wait for 320*10*12 ns;
+		-- sda_master <= '0';
+		-- wait for 320*4 ns;
+		-- sda_master <= '1';
+		-- wait for 320*3 ns;
+	--	
 		sda_master <= '1';
 		wait for 320*9 ns;
 		sda_master <= '0';
 		wait for 320*64 ns;
+		sda_master <= '1';
+		wait for 320*10 ns;
+		sda_master <= '0';
+		wait for 320*10 ns;
+		sda_master <= '1';
+		wait for 320*10 ns;
+		
+		sda_master <= '1';
+		wait for 320*10*8 ns;
+		sda_master <= '1';
+		wait for 320*10 ns;
+		sda_master <= '0';
+		wait for 320*4 ns;
+		sda_master <= '1';
+		wait for 320*2 ns;
+		sda_master <= '0';
+		wait for 320*1 ns;
+		
+		
+		sda_master <= '0';
+		wait for 320*63 ns;
 		sda_master <= '1';
 		wait for 320*10*12 ns;
 		sda_master <= '0';
 		wait for 320*4 ns;
 		sda_master <= '1';
 		wait for 320*3 ns;
-		
-		
 		
 end process sda_master_signal;
 
@@ -209,20 +239,6 @@ ctl_reset_r_signal: process is
 			
 end process ctl_reset_r_signal;
 
-
-status_rxfull_r_signal: process is
-	begin 	
-		status_rxfull_r <= '1';
-		wait ;
-			
-end process status_rxfull_r_signal;
-
-status_txempty_r_signal: process is
-	begin 	
-		status_txempty_r <= '1';
-		wait ;
-			
-end process status_txempty_r_signal;
 
 txdata_signal: process is
 	begin 	

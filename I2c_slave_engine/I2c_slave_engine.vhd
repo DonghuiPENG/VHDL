@@ -33,8 +33,8 @@ port(
 		ctl_reset_r: in std_logic;
 		
 		
-		status_rxfull_r: in std_logic;
-		status_txempty_r: in std_logic;		
+		--status_rxfull_r: in std_logic;
+		--status_txempty_r: in std_logic;		
 		
 		
 		txdata: in std_logic_vector (7 downto 0);
