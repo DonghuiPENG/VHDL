@@ -4,8 +4,13 @@
 --! @details This entity with synchronization reset is used to simulate the whole slave engine 
 --! design with register. By the way, those ports is simulated for the part of register insteading 
 --! of Avalon interface. According to the I2C slave engine, we need to use some components what it needs
---! to work well.
---! 
+--! to work well. For example, there are have cascadable_counter, scl_tick_generator, shift_register_transmitter, 
+--! shift_register_receiver, Condition_detect and SCL_detect. At the begining, I2c_slave_engine would work
+--! after receiving a start condition. Then it judges that if it matchs its own address by receiving one byte 
+--! after the start condition detected. If it is matched, it will launch transmitter shift register or 
+--! receiver shift register to work until receiving a stop condition.
+--! To manage our shift_register, we have created three switchs.
+-----------------------------------------------------------------
 --! PENG Donghui
 -----------------------------------------------------------------
 
@@ -187,9 +192,9 @@ architecture fsm of I2c_slave_engine is
 	signal count 					: integer;
 	signal casc_out					: STD_LOGIC;
 	signal SCL_tick					: STD_LOGIC; 
-	signal sda_out_t1				: STD_LOGIC;
-	signal sda_out_r1				: STD_LOGIC;
-	signal sda_out_r2				: STD_LOGIC;
+	signal sda_out_t1				: STD_LOGIC;--! transmitter1 data line output
+	signal sda_out_r1				: STD_LOGIC;--! receiver1 data line output
+	signal sda_out_r2				: STD_LOGIC;--! receiver2 data line output
 	
 	
 	signal SCL_rising_point 		: STD_LOGIC;
@@ -200,9 +205,9 @@ architecture fsm of I2c_slave_engine is
 	signal SCL_write_point 			: STD_LOGIC;
 	signal SCL_error_indication 	: STD_LOGIC;
 	
-	signal receiver1_switch			: STD_LOGIC:='0';
-	signal receiver2_switch			: STD_LOGIC:='0';
-	signal transmitter1_switch		: STD_LOGIC:='0';
+	signal receiver1_switch			: STD_LOGIC:='0';--! to connect receiver1 sync_rst
+	signal receiver2_switch			: STD_LOGIC:='0';--! to connect receiver2 sync_rst
+	signal transmitter1_switch		: STD_LOGIC:='0';--! to connect transmitter1 sync_rst
 	signal ACK_out					: STD_LOGIC;
 	signal ACK_valued			   	: STD_LOGIC;
 	signal TX_captured				: STD_LOGIC;
@@ -215,8 +220,8 @@ architecture fsm of I2c_slave_engine is
 	signal stop_detected_point		: STD_LOGIC;
 	signal error_detected_point		: STD_LOGIC;
 						
-	signal address_received			: std_logic_vector (6 downto 0);	
-	signal rw_received				: STD_LOGIC;
+	signal address_received			: std_logic_vector (6 downto 0);--! to save address_received data	
+	signal rw_received				: STD_LOGIC;--! to save read/write data
 
 	
 --! type t_state as 8 differents states: 
@@ -228,7 +233,8 @@ architecture fsm of I2c_slave_engine is
 	
 	
 begin
-	
+
+	--! an instance of component cascadable_counter	 
 	cc: cascadable_counter
 	port map(
 	clk => clk,
@@ -241,7 +247,7 @@ begin
 	);
 	
 	
-	
+	--! an instance of component scl_tick_generator	 
 	Stg: scl_tick_generator
 	port map(
 	clk_50MHz => clk,
@@ -252,7 +258,7 @@ begin
 	);
 	
 	
-	
+	--! an instance of component shift_register_transmitter	 
 	t1: shift_register_transmitter
 	port map(
 	clk => clk,
@@ -272,7 +278,7 @@ begin
 	TX_captured => status_txempty_s
 	);
 	
-	
+	--! an instance of component shift_register_receiver	 
 	r1: shift_register_receiver
 	port map(
 	clk => clk,
@@ -291,7 +297,7 @@ begin
 	RX => RX1	
 	);
 	 
-	 
+	--! an instance of component shift_register_receiver	 
 	r2: shift_register_receiver
 	port map(
 	clk => clk,
@@ -309,7 +315,8 @@ begin
 	data_received => status_rxfull_s,
 	RX => rxdata -- To connect with rxdata register
 	);
-	 
+	
+	--! an instance of component Condition_detect 
 	Cd: Condition_detect
 	port map(
 	clk => clk,
@@ -323,7 +330,7 @@ begin
 	error_detected_point => error_detected_point
 	);
 	 
-	 
+	--! an instance of component SCL_detect 
 	Sd: SCL_detect
 	port map(  
 	sync_rst => sync_rst,
