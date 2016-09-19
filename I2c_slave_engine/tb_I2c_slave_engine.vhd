@@ -54,8 +54,10 @@ port(
 		status_txempty_s				: out std_logic;
 		status_ackrec_w					: out std_logic;
 		
-		rxdata							: out std_logic_vector (7 downto 0)
+		rxdata							: out std_logic_vector (7 downto 0);
 		
+		interrupt_rw					: out std_logic;
+		slave_address					: out std_logic_vector (6 downto 0)
 	);
 
 
@@ -97,6 +99,9 @@ end component I2c_slave_engine;
 		
 	signal	rxdata						:  std_logic_vector (7 downto 0);
 	
+	signal	interrupt_rw				:  std_logic;
+	signal  slave_address				: std_logic_vector (6 downto 0);
+	
 begin
 	
 	
@@ -133,7 +138,12 @@ begin
 			status_txempty_s => status_txempty_s,
 			status_ackrec_w => status_ackrec_w,
 			
-			rxdata => rxdata
+			rxdata => rxdata,
+			
+			interrupt_rw => interrupt_rw,
+			
+			slave_address => slave_address
+			
 			);
 
 --! combine I2c_slave_engine data line output and I2c_master_engine data line output to data line		

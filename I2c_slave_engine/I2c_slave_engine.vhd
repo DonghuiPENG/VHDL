@@ -57,9 +57,13 @@ port(
 		status_error_detected_s			: out std_logic;--! indicate the situation of error state
 		status_rxfull_s					: out std_logic;--! indicate the situation of full RX
 		status_txempty_s				: out std_logic;--! indicate the situation of empty TX
-		status_ackrec_w					: out std_logic;--! means the contenu of ACK received
+		status_ackrec_w					: out std_logic;--! means the content of ACK received
 		
-		rxdata							: out std_logic_vector (7 downto 0)--!write data to byte RX
+		rxdata							: out std_logic_vector (7 downto 0);--!write data to byte RX
+		
+		interrupt_rw					: out std_logic;--! indicate read/write received update
+		
+		slave_address					: out std_logic_vector (6 downto 0)--!read data from 7 bits slave_address
 		
 	  );
 
@@ -220,7 +224,7 @@ architecture fsm of I2c_slave_engine is
 	signal stop_detected_point		: STD_LOGIC;
 	signal error_detected_point		: STD_LOGIC;
 						
-	signal address_received			: std_logic_vector (6 downto 0);--! to save address_received data	
+	--signal address_received			: std_logic_vector (6 downto 0);--! to save address_received data	
 	signal rw_received				: STD_LOGIC;--! to save read/write data
 
 	
@@ -383,7 +387,7 @@ if(rising_edge(clk)) then
 							
 					when receiver1 =>--! state current is receiver1
 						
-						if  (ACK_sent1 = '1') then--! transfer to the receiver1_waiting state
+						if  (data_received1 = '1') then--! transfer to the receiver1_waiting state
 							state <= receiver1_waiting;
 						
 						else 
@@ -394,8 +398,11 @@ if(rising_edge(clk)) then
 							state <= error;
 						end if;
 					
+					
+					
 					when receiver1_waiting=>--! state current is receiver1_waiting
-						if(address = address_received) then 
+						if (ACK_sent1 = '1') then
+							if(ctl_ack_r = '0') then 
 								if (rw_received = '0') then--! transfer to the receiver2 state 
 								state <= receiver2;
 								end if;
@@ -403,8 +410,9 @@ if(rising_edge(clk)) then
 								if (rw_received = '1') then--! transfer to the transmitter1 state 
 								state <= transmitter1;
 								end if;
-						else
-								state <= INIT;
+							else
+								state <= INIT;--! indicate the address received is not match
+							end if;
 						end if;
 						
 						if ((SCL_error_indication = '1') or (error_detected_point = '1')) then--! transfer to the error state
@@ -475,7 +483,7 @@ begin
 		status_start_detected_s <= '0';
 		status_error_detected_s <= '0';
 		
-		
+		interrupt_rw <= '0' ;
 		
 --! task for each state				
 case state is
@@ -492,9 +500,10 @@ case state is
 			receiver1_switch <= '1';--! opening the switch of component receiver1
 			
 		when receiver1_waiting => 
+			interrupt_rw <= '1';--! active interrupt read/write received
 			receiver1_switch <= '1';--! opening the switch of component receiver1	
 			rw_received <= RX1(0);--!save read/write data into rw_received signal
-			address_received <= RX1(7 downto 1);--!save address data into address_received signal
+			slave_address <= RX1(7 downto 1);--!save address data into address_received signal
 			
 		
 		when receiver2 => 

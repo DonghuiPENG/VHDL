@@ -1,7 +1,8 @@
 -----------------------------------------------------------------
 --! @file shift_register_receiver.vhd
 --! @brief shift register to receive 8-bit data
---! @details Updated 21/07/2016
+--! @details Created 21/07/2016
+--! Last Update 08/09/2016 				
 --! Changhua DING
 -----------------------------------------------------------------
 
@@ -27,6 +28,7 @@ port(clk: in std_logic;				--! clock input
 	 writing_point: in std_logic;	--! writing_point input
 	 ACK_in: in std_logic;			--! acknowledge bit input
 	 sda_out: out std_logic;		--! sda_out output
+	 ACK_sent: out std_logic;		--! ACK_sent output, triger a '1' when ACK is sent
 	 data_received: out std_logic;	--! data_received bit output
 	 RX: out std_logic_vector (7 downto 0) --! RX received byte output
 	 );
@@ -42,7 +44,7 @@ signal reg_write: std_logic;
 signal go: std_logic;
 signal data: std_logic_vector (7 downto 0);
 signal byte_to_be_used: std_logic_vector (7 downto 0);
-type state_type is (CLEAR, S7, S6, S5, S4, S3, S2, S1, S0, READ_DATA, S_WAIT, SEND_ACK, ACK_TEMP);
+type state_type is (CLEAR, S7, S6, S5, S4, S3, S2, S1, S0, READ_DATA, S_WAIT, SEND_ACK, ACK_TEMP_1, ACK_TEMP_2);
 signal state: state_type := CLEAR;
 
 
@@ -130,10 +132,13 @@ begin
 					when SEND_ACK =>
 					
 						if(falling_point = '1' and scl_tick = '1') then
-							state <= ACK_TEMP;
+							state <= ACK_TEMP_1;
 						end if;
-						
-					when ACK_TEMP =>
+					
+					when ACK_TEMP_1 =>
+						state <= ACK_TEMP_2;
+					
+					when ACK_TEMP_2 =>
 					
 						if(scl_tick = '1') then
 							state <= CLEAR;
@@ -166,75 +171,94 @@ begin
 			reg_write <= '0';
 			data <= (others => '0');
 			sda_out <= '1';
-		
+			ACK_sent <= '0';
+			
 		when S7 => 
 			
 			reg_write <= '0';
 			data(7) <= sda_in;
 			sda_out <= '1';
+			ACK_sent <= '0';
 			
 		when S6 => 
 			
 			reg_write <= '0';
 			data(6) <= sda_in;
 			sda_out <= '1';
-		
+			ACK_sent <= '0';
+			
 		when S5 => 
 			
 			reg_write <= '0';
 			data(5) <= sda_in;
 			sda_out <= '1';
-		
+			ACK_sent <= '0';
+			
 		when S4 => 
 			
 			reg_write <= '0';
 			data(4) <= sda_in;
 			sda_out <= '1';
-		
+			ACK_sent <= '0';
+			
 		when S3 => 
 			
 			reg_write <= '0';
 			data(3) <= sda_in;
 			sda_out <= '1';
+			ACK_sent <= '0';
 			
 		when S2 => 
 			
 			reg_write <= '0';
 			data(2) <= sda_in;
 			sda_out <= '1';
+			ACK_sent <= '0';
 			
 		when S1 => 
 			
 			reg_write <= '0';
 			data(1) <= sda_in;
 			sda_out <= '1';	
-				
+			ACK_sent <= '0';
+			
 		when S0 => 
 			
 			reg_write <= '0';
 			data(0) <= sda_in;	
 			sda_out <= '1';
+			ACK_sent <= '0';
 			
 		when READ_DATA => 
 		
 			
 			reg_write <= '1';
 			sda_out <= '1';
-						
+			ACK_sent <= '0';
+			
 		when S_WAIT =>
 			
 			reg_write <= '0';
 			sda_out <= '1';
+			ACK_sent <= '0';
 			
 		when SEND_ACK =>
 			
 			reg_write <= '0';
 			sda_out <= ACK_in;
+			ACK_sent <= '0';
 			
-		when ACK_TEMP =>		-- Maintain the ACK temporally
+		when ACK_TEMP_1 =>		-- Maintain the ACK temporally
 			
 			reg_write <= '0';
 			sda_out <= ACK_in;
+			ACK_sent <= '1';
+		
+		when ACK_TEMP_2 =>
+		
+			reg_write <= '0';
+			sda_out <= ACK_in;
+			ACK_sent <= '0';
 		
 		end case;
 	
