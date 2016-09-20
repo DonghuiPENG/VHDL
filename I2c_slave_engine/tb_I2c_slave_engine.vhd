@@ -46,13 +46,15 @@ port(
 		sda_out							: out STD_LOGIC;
 
 		status_busy_w					: out std_logic;
-		status_rw_w						: out std_logic;
+		status_busy						: out std_logic;
+		status_rw			  			: out std_logic;
 		status_stop_detected_s			: out std_logic;
 		status_start_detected_s			: out std_logic;
 		status_error_detected_s			: out std_logic;
 		status_rxfull_s					: out std_logic;
 		status_txempty_s				: out std_logic;
 		status_ackrec_w					: out std_logic;
+		status_ackrec					: out std_logic;
 		
 		rxdata							: out std_logic_vector (7 downto 0);
 		
@@ -62,6 +64,20 @@ port(
 
 
 end component I2c_slave_engine;
+
+	--! Component cascadable_counter
+	component cascadable_counter is
+
+	generic(max_count: positive := 2);
+	port (clk: in std_logic;
+			ena: in std_logic;
+			sync_rst:in std_logic;
+			casc_in: in std_logic;
+			count: out integer range 0 to (max_count-1);
+			casc_out: out std_logic
+			);
+			
+	end component cascadable_counter;
 	
 	--! use internals signals simulate these ports of component	
 	signal sda_master					:  std_logic;
@@ -89,13 +105,15 @@ end component I2c_slave_engine;
 	signal  sda_out						:  std_logic;
 		
 	signal	status_busy_w				:  std_logic;
-	signal	status_rw_w					:  std_logic;
+	signal	status_busy					:  std_logic;
+	signal	status_rw					:  std_logic;
 	signal	status_stop_detected_s		:  std_logic;
 	signal	status_start_detected_s		:  std_logic;
 	signal	status_error_detected_s		:  std_logic;
 	signal	status_rxfull_s				:  std_logic;
 	signal	status_txempty_s			:  std_logic;
 	signal	status_ackrec_w				:  std_logic;
+	signal	status_ackrec				:  std_logic;
 		
 	signal	rxdata						:  std_logic_vector (7 downto 0);
 	
@@ -130,13 +148,15 @@ begin
 			sda_out => sda_out,
 		
 			status_busy_w => status_busy_w,
-			status_rw_w => status_rw_w,
+			status_busy => status_busy,
+			status_rw => status_rw,
 			status_stop_detected_s	=> status_stop_detected_s,
 			status_start_detected_s => status_start_detected_s,
 			status_error_detected_s => status_error_detected_s,
 			status_rxfull_s => status_rxfull_s,
 			status_txempty_s => status_txempty_s,
 			status_ackrec_w => status_ackrec_w,
+			status_ackrec => status_ackrec,
 			
 			rxdata => rxdata,
 			
@@ -145,10 +165,23 @@ begin
 			slave_address => slave_address
 			
 			);
-
+	
+	--! an instance of component scl_tick_generator
+	Cc: cascadable_counter 
+	port map (
+	clk => clk,
+	ena => '1',
+	sync_rst => sync_rst,
+	casc_in => '1',
+	count => open,
+	
+	casc_out => clk_ena
+	);
 --! combine I2c_slave_engine data line output and I2c_master_engine data line output to data line		
 SDA <= sda_out and sda_master;
 SDA_in <= sda;
+sync_rst <= '1';
+
 
 --! process of generating a clk signal
 clk_signal: process is
@@ -171,6 +204,7 @@ SCL_in_signal: process is
 		wait for 1600 ns;
 			
 end process SCL_in_signal;
+
 
 --! process of generating a sda_master signal
 sda_master_signal: process is

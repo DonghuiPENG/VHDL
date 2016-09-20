@@ -17,27 +17,26 @@ architecture Behavioral of tb_cascadable_counter is
 
 --! use a entity as a component
 component cascadable_counter is
-	generic ( divisor : positive := 2); 
-	 
-    Port(  
-		clk 			:in  STD_LOGIC;
-        clk_ena 		:in  STD_LOGIC;
-		sync_rst 		:in  STD_LOGIC;
-        cascade_in 		:in  STD_LOGIC;
-        
-		count 			:out  integer range 0 to (divisor-1);
-        cascade_out 	:out  STD_LOGIC
-		);
-end component;
+
+	generic(max_count: positive := 2);
+	port (clk: in std_logic;
+			ena: in std_logic;
+			sync_rst:in std_logic;
+			casc_in: in std_logic;
+			count: out integer range 0 to (max_count-1);
+			casc_out: out std_logic
+			);
+			
+end component cascadable_counter;
 
 --! use signals internals simulate these ports of component
 	
 	signal clk: STD_LOGIC;
-	signal clk_ena: STD_LOGIC;
+	signal ena: STD_LOGIC;
 	signal sync_rst: STD_LOGIC;
-	signal cascade_in: STD_LOGIC;
+	signal casc_in: STD_LOGIC;
 	signal count: integer; 
-	signal cascade_out: STD_LOGIC;
+	signal casc_out: STD_LOGIC;
 	
 begin
 	
@@ -46,20 +45,24 @@ begin
 --! an instance of component		
 
 	gen_ena: cascadable_counter
-	generic map (divisor => 2)
+	generic map (max_count => 2)
 	port map(
 			clk => clk, 
-			clk_ena => clk_ena, 
+			ena => ena, 
 			sync_rst => sync_rst, 
-			cascade_in => cascade_in, 
+			casc_in => casc_in, 
 			count => count, 
-			cascade_out => cascade_out
+			casc_out => casc_out
 			);
 
 				
 	sync_rst <= '1';	
-	cascade_in <= '1';
-	clk_ena <= '1';
+	casc_in <= '1';
+	ena <= '1';
+--! process of generating a ena signal	
+
+
+
 --! process of generating a clock signal	
 
 clk_signal: process is

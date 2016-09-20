@@ -62,7 +62,7 @@ begin
 				
 	
 	sync_rst <= '1';
-	clk_ena <= '1';
+	--clk_ena <= '1';
 	
 --! process of generating a clock signal	
 clk_signal: process is
@@ -74,6 +74,17 @@ clk_signal: process is
 		wait for 10 ns;
 			
 end process clk_signal;
+
+--! process of generating a clock enable signal	
+clk_ena_signal: process is
+	begin 
+	
+		clk_ena <= '1';
+		wait for 20 ns;
+		clk_ena <= '0';
+		wait for 20 ns;
+			
+end process clk_ena_signal;
 
 --! process of generating a SCL_in signal	
 SCL_in_signal: process is

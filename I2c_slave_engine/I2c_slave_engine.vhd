@@ -50,14 +50,16 @@ port(
 		
 		sda_out							: out STD_LOGIC;--! means output from I2c_slave_engine to I2C data line 
 
-		status_busy_w					: out std_logic;--! indicate the situation of busy state
-		status_rw_w						: out std_logic;--! indicate the situation of read or write state
+		status_busy_w					: out std_logic;--! indicate the command of busy state
+		status_busy						: out std_logic;--! indicate the situation of busy state
+		status_rw						: out std_logic;--! indicate the situation of read or write state
 		status_stop_detected_s			: out std_logic;--! indicate the situation of stop state
 		status_start_detected_s			: out std_logic;--! indicate the situation of start state
 		status_error_detected_s			: out std_logic;--! indicate the situation of error state
 		status_rxfull_s					: out std_logic;--! indicate the situation of full RX
 		status_txempty_s				: out std_logic;--! indicate the situation of empty TX
-		status_ackrec_w					: out std_logic;--! means the content of ACK received
+		status_ackrec_w					: out std_logic;--! means the command of ACK received
+		status_ackrec					: out std_logic;--! means the situation of ACK received
 		
 		rxdata							: out std_logic_vector (7 downto 0);--!write data to byte RX
 		
@@ -75,22 +77,7 @@ end entity I2c_slave_engine;
 --! @details More details about this I2c_slave_engine element.
 architecture fsm of I2c_slave_engine is
 
-	--! Component cascadable_counter
-	component cascadable_counter is
 	
-	generic(max_count: positive := 2);
-	
-	port(
-		clk			: in std_logic;--! clock input
-		ena			: in std_logic;--! clock_enable input
-		sync_rst	: in std_logic;--! synchronization reset input
-		casc_in		: in std_logic;--! cascadable_counter input
-		
-		count		: out integer range 0 to (max_count-1);--! cascadable_counting
-		casc_out	: out std_logic--! cascadable_counter output
-		);
-			
-	end component cascadable_counter;
 	
 	--! Component scl_tick_generator
 	component scl_tick_generator is
@@ -192,14 +179,12 @@ architecture fsm of I2c_slave_engine is
 
 
 --! almost these signals used to connect components, and the last two signals for save address data and read/write data
-	signal casc_in 					: STD_LOGIC:= '1';
-	signal count 					: integer;
-	signal casc_out					: STD_LOGIC;
+
+	
 	signal SCL_tick					: STD_LOGIC; 
 	signal sda_out_t1				: STD_LOGIC;--! transmitter1 data line output
 	signal sda_out_r1				: STD_LOGIC;--! receiver1 data line output
 	signal sda_out_r2				: STD_LOGIC;--! receiver2 data line output
-	
 	
 	signal SCL_rising_point 		: STD_LOGIC;
 	signal SCL_stop_point			: STD_LOGIC;
@@ -212,9 +197,6 @@ architecture fsm of I2c_slave_engine is
 	signal receiver1_switch			: STD_LOGIC:='0';--! to connect receiver1 sync_rst
 	signal receiver2_switch			: STD_LOGIC:='0';--! to connect receiver2 sync_rst
 	signal transmitter1_switch		: STD_LOGIC:='0';--! to connect transmitter1 sync_rst
-	signal ACK_out					: STD_LOGIC;
-	signal ACK_valued			   	: STD_LOGIC;
-	signal TX_captured				: STD_LOGIC;
 	signal ACK_sent1				: STD_LOGIC;
 	signal ACK_sent2				: STD_LOGIC;
 	
@@ -238,17 +220,8 @@ architecture fsm of I2c_slave_engine is
 	
 begin
 
-	--! an instance of component cascadable_counter	 
-	cc: cascadable_counter
-	port map(
-	clk => clk,
-	ena => clk_ena,
-	sync_rst => sync_rst,
-	casc_in => casc_in,
 	
-	count=>count,
-	casc_out=>casc_out
-	);
+			
 	
 	
 	--! an instance of component scl_tick_generator	 
@@ -256,7 +229,7 @@ begin
 	port map(
 	clk_50MHz => clk,
 	sync_rst => sync_rst,
-	ena => casc_out,
+	ena => clk_ena,
 	
 	scl_tick => scl_tick
 	);
@@ -277,8 +250,8 @@ begin
 	sda_in => sda_in,
 	
 	sda_out => sda_out_t1,
-	ACK_out => status_ackrec_w,
-	ACK_valued => ACK_valued,
+	ACK_out => status_ackrec,
+	ACK_valued => status_ackrec_w,
 	TX_captured => status_txempty_s
 	);
 	
@@ -340,8 +313,8 @@ begin
 	sync_rst => sync_rst,
 	clk => clk, 
 	clk_ena => clk_ena, 
-	SCL_in => scl_in,
-	SCL_tick => SCL_tick,
+	SCL_in => SCL_in,
+	SCL_tick => scl_tick,
 				
 	SCL_stop_point => SCL_stop_point,
 	SCL_start_point => SCL_start_point,
@@ -478,7 +451,8 @@ begin
 		transmitter1_switch <= '0';
 		
         status_busy_w <= '1';
-		status_rw_w <= rw_received;
+		status_busy <= '1';
+		status_rw <= rw_received;
 		status_stop_detected_s <= '0';
 		status_start_detected_s <= '0';
 		status_error_detected_s <= '0';
@@ -489,7 +463,7 @@ begin
 case state is
 		
 		when INIT => 
-			status_busy_w <= '0';--! means the slave is not busy	
+			status_busy <= '0';--! means the slave is not busy	
 		
 		when start => 
 			status_start_detected_s <= '1';--! means the slave has detected a start condition
@@ -514,7 +488,7 @@ case state is
 			transmitter1_switch <= '1';--! opening the switch of component transmitter1
 
 		when stop =>
-			status_busy_w <= '0';--! means the slave is not busy again
+			status_busy <= '0';--! means the slave is not busy again
 			status_stop_detected_s <= '1';--! means the slave has detected a stop condition
 				
 		when error =>
