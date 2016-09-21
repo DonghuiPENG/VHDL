@@ -427,6 +427,10 @@ if(rising_edge(clk)) then
 						end if;
 					
 					end case;
+				else
+				
+					state <= INIT;--! if ctl_role_r equal to 1 , state transfer to init 
+					
 				end if;
 			
 		else
