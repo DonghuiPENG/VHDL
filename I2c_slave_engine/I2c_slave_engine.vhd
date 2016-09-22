@@ -334,7 +334,7 @@ begin
 
 if(rising_edge(clk)) then
 	if(clk_ena = '1') then
-		if(sync_rst = '1') then
+		if ( (sync_rst = '1') and (ctl_reset_r = '1') )then
 			
 				if(ctl_role_r = '0') then
 --! transfer the state depend on the value of state current and transtions					
