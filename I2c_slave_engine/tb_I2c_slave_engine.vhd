@@ -295,7 +295,7 @@ end process ctl_ack_r_signal;
 --! process of generating a ctl_reset_r signal
 ctl_reset_r_signal: process is
 	begin 	
-		ctl_reset_r <= '0';
+		ctl_reset_r <= '1';
 		wait ;
 			
 end process ctl_reset_r_signal;
